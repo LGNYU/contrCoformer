@@ -1,8 +1,8 @@
 import torch
 
 debug = True
-image_path = "C:/Moein/AI/Datasets/Flicker-8k/Images"
-captions_path = "C:/Moein/AI/Datasets/Flicker-8k"
+image_path = "/home/lgeng/contrCoformer/Images"
+captions_path = "/home/lgeng/contrCoformer"
 batch_size = 8
 num_workers = 0
 lr = 1e-3

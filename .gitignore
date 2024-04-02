@@ -1,2 +1,9 @@
 *.pyc
+*.zip
+*.txt
+*.pt
+*.csv
 __pycache__
+
+/Flicker8k_Dataset
+/Images

@@ -12,7 +12,12 @@ import config as CFG
 from dataset import CLIPDataset, get_transforms
 from CLIP import CLIPModel
 from utils import AvgMeter, get_lr
+from coformer.contrCoformer import contrCoformer
 
+def txt2csv():
+    df = pd.read_csv("captions.txt")
+    df['id'] = [id_ for id_ in range(df.shape[0] // 5) for _ in range(5)]
+    df.to_csv(f"{CFG.captions_path}/captions.csv", index=False)
 
 def make_train_valid_dfs():
     dataframe = pd.read_csv(f"{CFG.captions_path}/captions.csv")
@@ -80,6 +85,7 @@ def valid_epoch(model, valid_loader):
 
 
 def main():
+    txt2csv()
     train_df, valid_df = make_train_valid_dfs()
     tokenizer = DistilBertTokenizer.from_pretrained(CFG.text_tokenizer)
     train_loader = build_loaders(train_df, tokenizer, mode="train")

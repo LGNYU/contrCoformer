@@ -4,6 +4,7 @@ import torch.nn.functional as F
 
 import config as CFG
 from modules import ImageEncoder, TextEncoder, ProjectionHead
+from coformer.contrCoformer import contrCoformer, d_model
 
 
 class CLIPModel(nn.Module):
@@ -22,21 +23,21 @@ class CLIPModel(nn.Module):
 
     def forward(self, batch):
         # Getting Image and Text Features
-        image_features = self.image_encoder(batch["image"])
+        image_features = self.image_encoder(batch["image"])  # shape: (batch_size, embedding_dim)
         text_features = self.text_encoder(
-            input_ids=batch["input_ids"], attention_mask=batch["attention_mask"]
+            input_ids=batch["input_ids"], attention_mask=batch["attention_mask"]  # shape: (batch_size, max_length, embedding_dim)
         )
         # Getting Image and Text Embeddings (with same dimension)
-        image_embeddings = self.image_projection(image_features)
-        text_embeddings = self.text_projection(text_features)
+        image_embeddings = self.image_projection(image_features)  # shape: (batch_size, projection_dim)
+        text_embeddings = self.text_projection(text_features)  # shape: (batch_size, projection_dim)
 
         # Calculating the Loss
-        logits = (text_embeddings @ image_embeddings.T) / self.temperature
-        images_similarity = image_embeddings @ image_embeddings.T
-        texts_similarity = text_embeddings @ text_embeddings.T
+        logits = (text_embeddings @ image_embeddings.T) / self.temperature  # shape: (batch_size, batch_size)
+        images_similarity = image_embeddings @ image_embeddings.T  # shape: (batch_size, batch_size)
+        texts_similarity = text_embeddings @ text_embeddings.T  # shape: (batch_size, batch_size)
         targets = F.softmax(
             (images_similarity + texts_similarity) / 2 * self.temperature, dim=-1
-        )
+        )   # shape: (batch_size, batch_size)
         texts_loss = cross_entropy(logits, targets, reduction='none')
         images_loss = cross_entropy(logits.T, targets.T, reduction='none')
         loss =  (images_loss + texts_loss) / 2.0 # shape: (batch_size)
@@ -49,6 +50,41 @@ def cross_entropy(preds, targets, reduction='none'):
     if reduction == "none":
         return loss
     elif reduction == "mean":
+        return loss.mean()
+
+
+
+class constrastiveTraj(nn.Module):
+    def __init__(
+        self,
+        temperature=CFG.temperature,
+        embedding_dim=d_model,
+    ):
+        super().__init__()
+        self.temperature = temperature
+        self.first_encoder = contrCoformer()
+        self.second_encoder = contrCoformer()
+        self.first_projection = ProjectionHead(embedding_dim=embedding_dim)
+        self.second_projection = ProjectionHead(embedding_dim=embedding_dim)
+
+    def forward(self, batch):
+        # Getting Image and Text Features
+        first_features = self.first_encoder(batch["traj_1"])
+        second_features = self.second_encoder(batch["traj_2"])
+        # Getting Image and Text Embeddings (with same dimension)
+        image_embeddings = self.first_projection(first_features)
+        text_embeddings = self.second_projection(second_features)
+
+        # Calculating the Loss
+        logits = (text_embeddings @ image_embeddings.T) / self.temperature
+        images_similarity = image_embeddings @ image_embeddings.T
+        texts_similarity = text_embeddings @ text_embeddings.T
+        targets = F.softmax(
+            (images_similarity + texts_similarity) / 2 * self.temperature, dim=-1
+        )
+        texts_loss = cross_entropy(logits, targets, reduction='none')
+        images_loss = cross_entropy(logits.T, targets.T, reduction='none')
+        loss =  (images_loss + texts_loss) / 2.0 # shape: (batch_size)
         return loss.mean()
 
 if __name__ == '__main__':
