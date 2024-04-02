@@ -69,8 +69,8 @@ class constrastiveTraj(nn.Module):
 
     def forward(self, batch):
         # Getting Image and Text Features
-        first_features = self.first_encoder(batch["traj_1"])
-        second_features = self.second_encoder(batch["traj_2"])
+        first_features = self.first_encoder.encode(**batch["traj_1"])
+        second_features = self.second_encoder.encode(**batch["traj_2"])
         # Getting Image and Text Embeddings (with same dimension)
         image_embeddings = self.first_projection(first_features)
         text_embeddings = self.second_projection(second_features)
@@ -88,15 +88,29 @@ class constrastiveTraj(nn.Module):
         return loss.mean()
 
 if __name__ == '__main__':
-    images = torch.randn(8, 3, 224, 224)
-    input_ids = torch.randint(5, 300, size=(8, 25))
-    attention_mask = torch.ones(8, 25)
-    batch = {
-        'image': images,
-        'input_ids': input_ids,
-        'attention_mask': attention_mask
-    }
+    # images = torch.randn(8, 3, 224, 224)
+    # input_ids = torch.randint(5, 300, size=(8, 25))
+    # attention_mask = torch.ones(8, 25)
+    # batch = {
+    #     'image': images,
+    #     'input_ids': input_ids,
+    #     'attention_mask': attention_mask
+    # }
 
-    CLIP = CLIPModel()
-    loss = CLIP(batch)
-    print("")
+    # CLIP = CLIPModel()
+    # loss = CLIP(batch)
+    # print("")
+
+    poses_1 = torch.randn(4, 100, 7)
+    features_1 = torch.randn(4, 5, 6528)
+    positions_1 = torch.randn(4, 100, 5, 2)
+    traj_1 = {'poses': poses_1, 'features': features_1, 'positions': positions_1}
+
+    poses_2 = torch.randn(4, 100, 7)
+    features_2 = torch.randn(4, 5, 6528)
+    positions_2 = torch.randn(4, 100, 5, 2)
+    traj_2 = {'poses': poses_2, 'features': features_2, 'positions': positions_2}
+
+    batch = {'traj_1': traj_1, 'traj_2': traj_2}
+    contrTraj = constrastiveTraj()
+    loss = contrTraj(batch)
