@@ -2,9 +2,11 @@ import torch
 from torch import nn
 import torch.nn.functional as F
 
+from info_nce import InfoNCE, info_nce
+
 import config as CFG
 from modules import ImageEncoder, TextEncoder, ProjectionHead
-from coformer.contrCoformer import contrCoformer, d_model
+from coformer.contrCoformer import *
 
 
 class CLIPModel(nn.Module):
@@ -86,6 +88,38 @@ class constrastiveTraj(nn.Module):
         images_loss = cross_entropy(logits.T, targets.T, reduction='none')
         loss =  (images_loss + texts_loss) / 2.0 # shape: (batch_size)
         return loss.mean()
+    
+
+class infoNCETrajs(nn.Module):
+    def __init__(
+        self,
+        temperature=CFG.temperature,
+        embedding_dim=d_model,
+    ):
+        super().__init__()
+        self.temperature = temperature
+        self.first_encoder = contrCoformerv2()
+        self.second_encoder = contrCoformerv2()
+        self.first_projection = ProjectionHead(embedding_dim=embedding_dim)
+        self.second_projection = ProjectionHead(embedding_dim=embedding_dim)
+        self.loss = InfoNCE(negative_mode='paired')
+
+    def forward(self, batch):
+        # Getting Image and Text Features
+        first_features = self.first_encoder.encode(**batch["traj_1"])
+        second_features = self.second_encoder.encode(**batch["traj_2"])
+        # Getting Image and Text Embeddings (with same dimension)
+        first_embeddings = self.first_projection(first_features)
+        second_embeddings = self.second_projection(second_features)
+
+        # Calculating the Loss
+        query = first_embeddings[:, 0, :]
+        positive_key = first_embeddings[:, 1, :]
+        negative_keys = second_embeddings
+
+        loss = self.loss(query, positive_key, negative_keys)
+        
+        return loss
 
 if __name__ == '__main__':
     # images = torch.randn(8, 3, 224, 224)
@@ -101,16 +135,17 @@ if __name__ == '__main__':
     # loss = CLIP(batch)
     # print("")
 
-    poses_1 = torch.randn(4, 100, 7)
-    features_1 = torch.randn(4, 5, 6528)
-    positions_1 = torch.randn(4, 100, 5, 2)
+    poses_1 = torch.randn(4, 2, 100, 7)
+    features_1 = torch.randn(4, 2, 5, 6528)
+    positions_1 = torch.randn(4, 2, 100, 5, 2)
     traj_1 = {'poses': poses_1, 'features': features_1, 'positions': positions_1}
 
-    poses_2 = torch.randn(4, 100, 7)
-    features_2 = torch.randn(4, 5, 6528)
-    positions_2 = torch.randn(4, 100, 5, 2)
+    poses_2 = torch.randn(4, 5, 100, 7)
+    features_2 = torch.randn(4, 5, 5, 6528)
+    positions_2 = torch.randn(4, 5, 100, 5, 2)
     traj_2 = {'poses': poses_2, 'features': features_2, 'positions': positions_2}
 
     batch = {'traj_1': traj_1, 'traj_2': traj_2}
-    contrTraj = constrastiveTraj()
+    contrTraj = infoNCETrajs()
     loss = contrTraj(batch)
+    print(loss)

@@ -115,6 +115,68 @@ def main():
             torch.save(model.state_dict(), "best.pt")
             print("Saved Best Model!")
 
+def coformer_train_epoch(model, train_loader, optimizer, lr_scheduler, step):
+    loss_meter = AvgMeter()
+    tqdm_object = tqdm(train_loader, total=len(train_loader))
+    for batch in tqdm_object:
+        batch = {k: v.to(CFG.device) for k, v in batch.items()}
+        loss = model(batch)
+        optimizer.zero_grad()
+        loss.backward()
+        optimizer.step()
+        if step == "batch":
+            lr_scheduler.step()
+
+        count = batch["traj_1"].size(0)
+        loss_meter.update(loss.item(), count)
+
+        tqdm_object.set_postfix(train_loss=loss_meter.avg, lr=get_lr(optimizer))
+    return loss_meter
+
+def coformer_valid_epoch(model, valid_loader):
+    loss_meter = AvgMeter()
+
+    tqdm_object = tqdm(valid_loader, total=len(valid_loader))
+    for batch in tqdm_object:
+        batch = {k: v.to(CFG.device) for k, v in batch.items()}
+        loss = model(batch)
+
+        count = batch["traj_1"].size(0)
+        loss_meter.update(loss.item(), count)
+
+        tqdm_object.set_postfix(valid_loss=loss_meter.avg)
+    return loss_meter
+
+def coformer_main():
+    txt2csv()
+    train_df, valid_df = make_train_valid_dfs()
+    tokenizer = DistilBertTokenizer.from_pretrained(CFG.text_tokenizer)
+    train_loader = build_loaders(train_df, tokenizer, mode="train")
+    valid_loader = build_loaders(valid_df, tokenizer, mode="valid")
+
+    model = contrCoformer().to(CFG.device)
+    optimizer = torch.optim.AdamW(
+        model.parameters(), lr=CFG.lr, weight_decay=CFG.weight_decay
+    )
+    lr_scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(
+        optimizer, mode="min", patience=CFG.patience, factor=CFG.factor
+    )
+    step = "epoch"
+    best_loss = float('inf')
+    for epoch in range(CFG.epochs):
+        print(f"Epoch: {epoch + 1}")
+        model.train()
+        train_loss = coformer_train_epoch(model, train_loader, optimizer, lr_scheduler, step)
+        model.eval()
+        with torch.no_grad():
+            valid_loss = coformer_valid_epoch(model, valid_loader)
+        
+        if valid_loss.avg < best_loss:
+            best_loss = valid_loss.avg
+            torch.save(model.state_dict(), "coformer_best.pt")
+            print("Saved Best Model!")
+
 
 if __name__ == "__main__":
-    main()
+    # main()
+    coformer_main()
