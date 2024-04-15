@@ -10,9 +10,10 @@ from transformers import DistilBertTokenizer
 
 import config as CFG
 from dataset import CLIPDataset, get_transforms
-from CLIP import CLIPModel
+from CLIP import *
 from utils import AvgMeter, get_lr
-from coformer.contrCoformer import contrCoformer
+from coformer.contrCoformer import *
+from coformer.traj_dataset import TrajDataset
 
 def txt2csv():
     df = pd.read_csv("captions.txt")
@@ -115,11 +116,24 @@ def main():
             torch.save(model.state_dict(), "best.pt")
             print("Saved Best Model!")
 
+def coformer_build_loaders(data_config):
+    dataset = TrajDataset(**data_config)
+    dataloader = torch.utils.data.DataLoader(
+        dataset,
+        batch_size=CFG.batch_size,
+        num_workers=CFG.num_workers,
+        shuffle=True if data_config["set_type"] == "train" else False,
+    )
+    return dataloader
+
 def coformer_train_epoch(model, train_loader, optimizer, lr_scheduler, step):
     loss_meter = AvgMeter()
     tqdm_object = tqdm(train_loader, total=len(train_loader))
     for batch in tqdm_object:
-        batch = {k: v.to(CFG.device) for k, v in batch.items()}
+        # breakpoint()
+        batch_1 = {k: v.to(CFG.device) for k, v in batch['traj_1'].items()}
+        batch_2 = {k: v.to(CFG.device) for k, v in batch['traj_2'].items()}
+        batch = {'traj_1': batch_1, 'traj_2': batch_2}
         loss = model(batch)
         optimizer.zero_grad()
         loss.backward()
@@ -127,7 +141,7 @@ def coformer_train_epoch(model, train_loader, optimizer, lr_scheduler, step):
         if step == "batch":
             lr_scheduler.step()
 
-        count = batch["traj_1"].size(0)
+        count = CFG.batch_size
         loss_meter.update(loss.item(), count)
 
         tqdm_object.set_postfix(train_loss=loss_meter.avg, lr=get_lr(optimizer))
@@ -148,13 +162,11 @@ def coformer_valid_epoch(model, valid_loader):
     return loss_meter
 
 def coformer_main():
-    txt2csv()
-    train_df, valid_df = make_train_valid_dfs()
-    tokenizer = DistilBertTokenizer.from_pretrained(CFG.text_tokenizer)
-    train_loader = build_loaders(train_df, tokenizer, mode="train")
-    valid_loader = build_loaders(valid_df, tokenizer, mode="valid")
+    train_config = CFG.data_config
+    train_loader = coformer_build_loaders(train_config)
+    # valid_loader = coformer_build_loaders(valid_config)
 
-    model = contrCoformer().to(CFG.device)
+    model = infoNCETrajs().to(CFG.device)
     optimizer = torch.optim.AdamW(
         model.parameters(), lr=CFG.lr, weight_decay=CFG.weight_decay
     )
@@ -168,13 +180,13 @@ def coformer_main():
         model.train()
         train_loss = coformer_train_epoch(model, train_loader, optimizer, lr_scheduler, step)
         model.eval()
-        with torch.no_grad():
-            valid_loss = coformer_valid_epoch(model, valid_loader)
+        # with torch.no_grad():
+        #     valid_loss = coformer_valid_epoch(model, valid_loader)
         
-        if valid_loss.avg < best_loss:
-            best_loss = valid_loss.avg
-            torch.save(model.state_dict(), "coformer_best.pt")
-            print("Saved Best Model!")
+        # if valid_loss.avg < best_loss:
+        #     best_loss = valid_loss.avg
+        #     torch.save(model.state_dict(), "coformer_best.pt")
+        #     print("Saved Best Model!")
 
 
 if __name__ == "__main__":

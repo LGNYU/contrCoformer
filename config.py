@@ -1,15 +1,22 @@
 import torch
 
+data_config = {}
+data_config['traj_base_path'] = '/home/lgeng/cogen/data'
+data_config['data_name'] = 'pour_60'
+data_config['set_type'] = 'train'
+data_config['success_data_path'] = '/home/lgeng/hrdc/pour_extracted/Pick_and_Place/cool/Env1'
+data_config['unsuccess_data_path'] = '/home/lgeng/hrdc/pour_failure_extracted/Door_Opening/my_home/Env1'
+
 debug = True
 image_path = "/home/lgeng/contrCoformer/Images"
 captions_path = "/home/lgeng/contrCoformer"
-batch_size = 8
+batch_size = 1
 num_workers = 0
 lr = 1e-3
 weight_decay = 1e-3
 patience = 2
 factor = 0.5
-epochs = 5
+epochs = 20
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 model_name = 'resnet50'
@@ -17,7 +24,7 @@ image_embedding = 2048
 text_encoder_model = "distilbert-base-uncased"
 text_embedding = 768
 text_tokenizer = "distilbert-base-uncased"
-max_length = 200
+max_length = 400
 
 pretrained = False # for both image encoder and text encoder
 trainable = False # for both image encoder and text encoder
