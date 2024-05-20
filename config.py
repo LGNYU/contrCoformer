@@ -1,11 +1,18 @@
 import torch
 
-data_config = {}
-data_config['traj_base_path'] = '/home/lgeng/cogen/data'
-data_config['data_name'] = 'pour_60'
-data_config['set_type'] = 'train'
-data_config['success_data_path'] = '/home/lgeng/hrdc/pour_extracted/Pick_and_Place/cool/Env1'
-data_config['unsuccess_data_path'] = '/home/lgeng/hrdc/pour_failure_extracted/Door_Opening/my_home/Env1'
+train_config = {}
+train_config['traj_base_path'] = '/home/lgeng/cogen/data'
+train_config['data_name'] = 'pour_60'
+train_config['set_type'] = 'train'
+train_config['success_data_path'] = '/home/lgeng/hrdc/pour_extracted/Pick_and_Place/cool/Env1'
+train_config['unsuccess_data_path'] = '/home/lgeng/hrdc/pour_failure_extracted/Door_Opening/my_home/Env1'
+
+valid_config = {}
+valid_config['traj_base_path'] = '/home/lgeng/cogen/data'
+valid_config['data_name'] = 'new_pour_60'
+valid_config['set_type'] = 'valid'
+valid_config['success_data_path'] = '/home/lgeng/hrdc/pour_extracted/Pick_and_Place/cool/Env1'
+valid_config['unsuccess_data_path'] = '/home/lgeng/hrdc/new_pour_failure_extracted/Door_Opening/my_home/Env1'
 
 debug = True
 image_path = "/home/lgeng/contrCoformer/Images"

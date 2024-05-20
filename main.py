@@ -6,6 +6,7 @@ from tqdm import tqdm
 
 import torch
 from torch import nn
+import torch.nn.functional as F
 from transformers import DistilBertTokenizer
 
 import config as CFG
@@ -152,19 +153,29 @@ def coformer_valid_epoch(model, valid_loader):
 
     tqdm_object = tqdm(valid_loader, total=len(valid_loader))
     for batch in tqdm_object:
-        batch = {k: v.to(CFG.device) for k, v in batch.items()}
-        loss = model(batch)
+        # breakpoint()
+        batch_1 = {k: v.to(CFG.device) for k, v in batch['traj_1'].items()}
+        batch_2 = {k: v.to(CFG.device) for k, v in batch['traj_2'].items()}
 
-        count = batch["traj_1"].size(0)
-        loss_meter.update(loss.item(), count)
+        encoder_1 = model.first_encoder
+        encoder_2 = model.second_encoder
+        first_features = encoder_1.encode(**batch_1).squeeze(1)
+        second_features = encoder_2.encode(**batch_2).squeeze(1)
+        cosine_sim = F.cosine_similarity(first_features, second_features)
+        print(cosine_sim)
+        print(batch["label"])
 
-        tqdm_object.set_postfix(valid_loss=loss_meter.avg)
+        # count = CFG.batch_size
+        # loss_meter.update(loss.item(), count)
+
+        # tqdm_object.set_postfix(valid_loss=loss_meter.avg)
     return loss_meter
 
 def coformer_main():
-    train_config = CFG.data_config
+    train_config = CFG.train_config
+    valid_config = CFG.valid_config
     train_loader = coformer_build_loaders(train_config)
-    # valid_loader = coformer_build_loaders(valid_config)
+    valid_loader = coformer_build_loaders(valid_config)
 
     model = infoNCETrajs().to(CFG.device)
     optimizer = torch.optim.AdamW(
@@ -179,9 +190,10 @@ def coformer_main():
         print(f"Epoch: {epoch + 1}")
         model.train()
         train_loss = coformer_train_epoch(model, train_loader, optimizer, lr_scheduler, step)
+        print("Train Loss: ", train_loss.avg)
         model.eval()
-        # with torch.no_grad():
-        #     valid_loss = coformer_valid_epoch(model, valid_loader)
+        with torch.no_grad():
+            valid_loss = coformer_valid_epoch(model, valid_loader)
         
         # if valid_loss.avg < best_loss:
         #     best_loss = valid_loss.avg
