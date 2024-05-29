@@ -1,14 +1,14 @@
 import torch
 
 train_config = {}
-train_config['traj_base_path'] = '/home/lgeng/cogen/data'
+# train_config['traj_base_path'] = '/home/lgeng/cogen/data'
 train_config['data_name'] = 'pour_60'
 train_config['set_type'] = 'train'
 train_config['success_data_path'] = '/home/lgeng/hrdc/pour_extracted/Pick_and_Place/cool/Env1'
 train_config['unsuccess_data_path'] = '/home/lgeng/hrdc/pour_failure_extracted/Door_Opening/my_home/Env1'
 
 valid_config = {}
-valid_config['traj_base_path'] = '/home/lgeng/cogen/data'
+# valid_config['traj_base_path'] = '/home/lgeng/cogen/data'
 valid_config['data_name'] = 'new_pour_60'
 valid_config['set_type'] = 'valid'
 valid_config['success_data_path'] = '/home/lgeng/hrdc/pour_extracted/Pick_and_Place/cool/Env1'
@@ -17,13 +17,13 @@ valid_config['unsuccess_data_path'] = '/home/lgeng/hrdc/new_pour_failure_extract
 debug = True
 image_path = "/home/lgeng/contrCoformer/Images"
 captions_path = "/home/lgeng/contrCoformer"
-batch_size = 1
+batch_size = 4
 num_workers = 0
 lr = 1e-3
 weight_decay = 1e-3
 patience = 2
 factor = 0.5
-epochs = 20
+epochs = 10
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 model_name = 'resnet50'

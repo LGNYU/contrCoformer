@@ -120,6 +120,37 @@ class infoNCETrajs(nn.Module):
         loss = self.loss(query, positive_key, negative_keys)
         
         return loss
+    
+class infoNCEImages(nn.Module):
+    def __init__(
+        self,
+        temperature=CFG.temperature,
+        embedding_dim=d_model,
+    ):
+        super().__init__()
+        self.temperature = temperature
+        self.first_encoder = imageContrCoformer()
+        self.second_encoder = imageContrCoformer()
+        self.first_projection = ProjectionHead(embedding_dim=embedding_dim)
+        self.second_projection = ProjectionHead(embedding_dim=embedding_dim)
+        self.loss = InfoNCE(negative_mode='paired')
+
+    def forward(self, batch):
+        # Getting Image and Text Features
+        first_features = self.first_encoder.encode(batch["traj_1"])
+        second_features = self.second_encoder.encode(batch["traj_2"])
+        # Getting Image and Text Embeddings (with same dimension)
+        first_embeddings = self.first_projection(first_features)
+        second_embeddings = self.second_projection(second_features)
+
+        # Calculating the Loss
+        query = first_embeddings[:, 0, :]
+        positive_key = first_embeddings[:, 1, :]
+        negative_keys = second_embeddings
+
+        loss = self.loss(query, positive_key, negative_keys)
+        
+        return loss
 
 if __name__ == '__main__':
     # images = torch.randn(8, 3, 224, 224)
