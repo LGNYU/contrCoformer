@@ -14,6 +14,7 @@ from transformers import DistilBertTokenizer
 import config as CFG
 from dataset import CLIPDataset, get_transforms
 from CLIP import *
+from embedding_dataset import EmbeddingDataset
 from utils import AvgMeter, get_lr
 from coformer.contrCoformer import *
 from coformer.traj_dataset import TrajDataset
@@ -21,7 +22,7 @@ from coformer.image_dataset import ImageDataset
 
 
 def coformer_build_loaders(data_config):
-    dataset = ImageDataset(**data_config)
+    dataset = EmbeddingDataset(**data_config)
     dataloader = torch.utils.data.DataLoader(
         dataset,
         batch_size=CFG.batch_size,
