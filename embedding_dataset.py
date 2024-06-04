@@ -23,7 +23,6 @@ class EmbeddingDataset(Dataset):
         self.unsuccess_data_path = unsuccess_data_path
         self.set_type = set_type
         self.negatives_num = negatives_num
-
         self._get_success_embedding_paths()
         self._get_unsuccess_embedding_paths()
         self._get_success_video_paths()
@@ -74,6 +73,7 @@ class EmbeddingDataset(Dataset):
         
         elif self.set_type == 'valid':
             label = random.choice([1, -1])
+            breakpoint()
             if idx < len(self.success_paths):
                 traj1_path = self.success_paths[idx]
 
