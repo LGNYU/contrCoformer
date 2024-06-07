@@ -1,0 +1,44 @@
+defaults:
+  - _self_
+
+suite: xarm_env
+tasks:
+  # Scene 1
+  # - fetch_glass_from_rack_higher_variation #0
+  # - fetch_towel_from_rack #1
+  # - fetch_tea_from_rack
+  # - fetch_vitamin_bottle_from_rack
+  # - pick_blue_mug #2
+  - pick_light_blue_bowl #3
+  # - pick_orange_from_bowl #4
+  # - pick_coffee_bag #5
+  - pick_starch_box #6
+  # - pick_blue_plate #7
+  # - pick_white_plate #8
+  # - pick_black_plate #9
+  # # - open_oven_door #10
+  # - open_oven_door_higher_variation #10
+  # - close_oven_door #11
+  # - place_glass_on_rack #12
+  # - wipe_towel #13
+  # - lift_pan_lid #14
+  # # - put_tomato_can_in_basket #15
+  # - put_coke_can_in_basket #16
+  # - put_cream_cheese_in_basket #17
+  # # - put_tomato_can_on_rack #18
+  # # - put_coke_can_on_rack
+  # # - put_vitamin_water_on_rack #19
+  # - put_orange_into_bowl
+  # - put_peach_into_bowl
+  # # Scene 2
+  # - fridge_put_tea_in_door #20
+  # - fridge_put_yoghurt_in_door #21
+  # # - fridge_put_ketchup_bottle_in_door
+  # # - fridge_put_vitamin_water_in_door #22
+  # - fridge_put_ketchup_bottle_inside #23
+  # - fridge_put_tomato_can_inside #24
+  # - fridge_take_tea_out_from_door #25
+  # - fridge_take_tomato_can_out #26
+  # - fridge_take_vitamin_water_out #27
+  # - fridge_take_yoghurt_out_from_door #28
+  # - fridge_fetch_knife_from_organizer
